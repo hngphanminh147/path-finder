@@ -1,0 +1,4 @@
+.\ve\Scripts\activate.ps1
+python .\traverse.py
+
+deactivate

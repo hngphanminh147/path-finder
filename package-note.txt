@@ -1,0 +1,1 @@
+wrapt, lazy-object-proxy, astroid, mccabe, isort, colorama, toml, pylint
