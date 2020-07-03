@@ -1,9 +1,10 @@
 import numpy as np
+import itertools
 
 # Width
-w = 10
+w = 20
 # Height
-h = 10
+h = 20
 # Border
 b = [(1, 1), (1, h - 1), (w - 1, h - 1), (w - 1, 1)]
 
@@ -11,16 +12,24 @@ b = [(1, 1), (1, h - 1), (w - 1, h - 1), (w - 1, 1)]
 o1 = [(8, 6), (10, 20), (22, 16)]
 o2 = [(27, 17), (33, 15), (35, 31), (27, 31)]
 o3 = [(16, 40), (26, 41), (35, 39), (14, 32)]
-
 os = [o1, o2, o3]
 
-# s = [2, 2]
-# d = [40, 40]
+# Wall
+w1 = [(5, 5), (5, 20), (6, 20), (6, 5)]
+w2 = [(15, 30), (25, 30), (25, 29), (15, 29)]
+w3 = [(37, 40), (38, 40), (38, 20), (37, 20)]
+ws = [w1, w2, w3]
+
+w4 = [[3, 3], [3, 7], [4, 7], [4, 3]]
+w5 = [[6, 4], [6, 5], [12, 5], [12, 4]]
+w6 = [[15, 5], [15, 15], [16, 15], [16, 5]]
+ws1 = [w4, w5, w6]
+
 
 # Starting point
 s = (2, 2)
 # Destination
-d = (7, 4)
+d = (17, 8)
 
 # Straight move cost
 sm = 1
@@ -104,13 +113,12 @@ def get_max_min(o):
             x_min = p[0]
         if p[1] < y_min:
             y_min = p[1]
-    print([x_min, y_max, x_max, y_min])
+    # print([x_min, y_max, x_max, y_min])
     return [x_min, y_max, x_max, y_min]
 
 
 # Check if point p get inside obstacle o
 def is_in(p, o):
-    print(p)
     m = get_max_min(o)
     # p.x < x_min or p.y > y_max or p.x > x_max or p.y < y_min 
     if p[0] < m[0] or p[1] > m[1] or p[0] > m[2] or p[1] < m[3]:
@@ -124,6 +132,13 @@ def is_in(p, o):
 
     # r = True if -1 in z and 1 in z else False
     # return r
+
+# Check if point p get inside obstacle o
+def is_ins(p, os):
+    for o in os:
+        if is_in(p, o) == True:
+            return True
+    return False
 
 # Check if point p get outside barrier
 def is_out(p, b):
@@ -154,11 +169,9 @@ def get_path(start, dest, track):
     path.reverse()
     return path
 
-
-
-def stupid_traverse(start, dest):
+# Return [path, cost]
+def traverse(start, dest, b, ws):
     visited = []
-    path = []
     # track[point] = previous point
     track = {}
     cost = 0
@@ -171,9 +184,7 @@ def stupid_traverse(start, dest):
     while len(queue) != 0:   
         # Pop point with min cost
         mc = min(queue, key=queue.get)
-        # print('mc', mc)
         visited.append(mc)
-        path.append(mc)
         cost = queue.get(mc)
         del queue[mc]
         if (mc == dest):
@@ -182,7 +193,7 @@ def stupid_traverse(start, dest):
         # Get children
         next = get_next(mc)
         for n in next:
-            if n not in visited and not is_out(n, b):
+            if n not in visited and not is_out(n, b) and not is_ins(n, ws):
                 # Add new point with correspond cost
                 if n not in queue.keys():                    
                     if n[0] == mc[0] or n[1] == mc[1]:
@@ -202,8 +213,35 @@ def stupid_traverse(start, dest):
                         if cost + dm < queue[n]:
                             queue[n] = cost + dm
                             track[n] = mc
+    # Cant find d
+    return [[], -1]
 
-[path, cost] = stupid_traverse(s, d)
-print('path', path)
-print('cost', cost)
+def multi_dest_traverse(start, dest, subdest, b, ws):
+    cases = list(itertools.permutations(subdest))
+    s = start
 
+    path = []
+    cost = -1
+
+    result = {}
+    for case in cases:
+        case = list(case)
+        case.append(s)
+        case.reverse()
+        case.append(d)
+
+        n = len(case)
+
+        p = []
+        c = -1
+
+        for i in range(n - 1):
+            [p, c] = traverse(case[i], case[i + 1], b, ws)
+            if c == -1:
+                return [[], -1]
+            path += p
+            cost += c
+        result[tuple(path)] = cost
+
+    r = min(result, key = result.get)
+    return [r, result[r]]
